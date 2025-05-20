@@ -2468,7 +2468,7 @@ export default function FarmSimulator() {
                                 <div className="text-center py-4">
                                   <p className="font-medium">Участок {index + 1}</p>
                                   <p className="text-sm text-gray-500">Плодородие: {plot.fertility}/5</p>
-                                  <div className="flex justify-between mt-2">
+                                  <div className="flex flex-col gap-2 mt-2">
                                     <Button
                                       size="sm"
                                       variant="outline"
