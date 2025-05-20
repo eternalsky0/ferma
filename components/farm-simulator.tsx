@@ -1316,10 +1316,9 @@ export default function FarmSimulator() {
 
     setGameState((prev) => {
       const newPlots = [...prev.plots]
+      if (newPlots[plotId].fertility >= 5) return prev;
       newPlots[plotId].fertility += 1
-
       addMessage(`🌱 Вы улучшили плодородие участка ${plotId + 1} до ${newPlots[plotId].fertility}/5 за ${cost} монет!`)
-
       return {
         ...prev,
         coins: prev.coins - cost,
@@ -1369,15 +1368,27 @@ export default function FarmSimulator() {
       return
     }
 
-    // Извлекаем название культуры из названия семян
-    const cropType = seedName.replace("Семена ", "") as CropType
-
-    // Проверяем, существует ли такой тип культуры в cropData
-    if (!cropData[cropType]) {
-      showNotification(`Ошибка: неизвестный тип культуры ${cropType}`)
-      console.error(`Неизвестный тип культуры: ${cropType}. Доступные типы:`, Object.keys(cropData))
-      return
+    // Максимально устойчивая логика поиска культуры
+    let cropTypeRaw = seedName.replace(/семена\s*/i, "").trim().toLowerCase();
+    let foundKey = (Object.keys(cropData) as CropType[]).find(
+      (key) => cropTypeRaw === key.toLowerCase()
+    );
+    if (!foundKey) {
+      foundKey = (Object.keys(cropData) as CropType[]).find(
+        (key) =>
+          key.toLowerCase().startsWith(cropTypeRaw) ||
+          cropTypeRaw.startsWith(key.toLowerCase()) ||
+          key.toLowerCase().includes(cropTypeRaw) ||
+          cropTypeRaw.includes(key.toLowerCase())
+      );
     }
+    if (!foundKey) {
+      showNotification(
+        `Внимание: неизвестный тип культуры "${cropTypeRaw}", будет посажена "${Object.keys(cropData)[0]}".`
+      );
+      foundKey = Object.keys(cropData)[0] as CropType;
+    }
+    const cropType: CropType = foundKey;
 
     // Проверяем уровень фермы
     if (gameState.farmLevel < cropData[cropType].minLevel) {
@@ -1539,9 +1550,14 @@ export default function FarmSimulator() {
       const newPlots = [...prev.plots]
       const newInventory = [...prev.inventory]
 
-      const crop = newPlots[plotId].crop!
-      const cropType = crop.type
-      const cropQuality = crop.quality
+      const plot = newPlots[plotId];
+      if (!plot.hasCrop || !plot.crop) {
+        showNotification("На этом участке ничего не растет!");
+        return prev;
+      }
+      const crop = plot.crop;
+      const cropType = crop.type;
+      const cropQuality = crop.quality;
 
       // Базовое количество урожая
       let harvestAmount = Math.floor(Math.random() * 2) + 1 // 1-2 единицы урожая
@@ -2467,7 +2483,7 @@ export default function FarmSimulator() {
                               ) : (
                                 <div className="text-center py-4">
                                   <p className="font-medium">Участок {index + 1}</p>
-                                  <p className="text-sm text-gray-500">Плодородие: {plot.fertility}/5</p>
+                                  <p className="text-sm text-gray-500">Плодородие: {Math.min(plot.fertility, 5)}/5</p>
                                   <div className="flex flex-col gap-2 mt-2">
                                     <Button
                                       size="sm"
