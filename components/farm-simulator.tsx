@@ -1368,18 +1368,26 @@ export default function FarmSimulator() {
       return
     }
 
-    // Максимально устойчивая логика поиска культуры
+    // Максимально устойчивая логика поиска культуры с учетом русских окончаний
+    function stem(str: string) {
+      let s = str.toLowerCase().trim();
+      if (s.length > 5) {
+        s = s.replace(/[аяиыеуюо]$/i, "");
+      }
+      return s;
+    }
     let cropTypeRaw = seedName.replace(/семена\s*/i, "").trim().toLowerCase();
+    let cropTypeStem = stem(cropTypeRaw);
     let foundKey = (Object.keys(cropData) as CropType[]).find(
-      (key) => cropTypeRaw === key.toLowerCase()
+      (key) => cropTypeStem === stem(key)
     );
     if (!foundKey) {
       foundKey = (Object.keys(cropData) as CropType[]).find(
         (key) =>
-          key.toLowerCase().startsWith(cropTypeRaw) ||
-          cropTypeRaw.startsWith(key.toLowerCase()) ||
-          key.toLowerCase().includes(cropTypeRaw) ||
-          cropTypeRaw.includes(key.toLowerCase())
+          stem(key).startsWith(cropTypeStem) ||
+          cropTypeStem.startsWith(stem(key)) ||
+          stem(key).includes(cropTypeStem) ||
+          cropTypeStem.includes(stem(key))
       );
     }
     if (!foundKey) {
@@ -2306,10 +2314,6 @@ export default function FarmSimulator() {
           <Button size="sm" variant="outline" onClick={saveGame}>
             <Save className="h-4 w-4 mr-1" />
             Сохранить
-          </Button>
-          <Button size="sm" variant="outline" onClick={resetGame}>
-            <RotateCcw className="h-4 w-4 mr-1" />
-            Сбросить
           </Button>
           <Button size="sm" variant="outline" onClick={debugGameState} className="hidden md:flex">
             Отладка
